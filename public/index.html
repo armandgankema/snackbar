@@ -72,8 +72,8 @@
       var a = el("a", null, c.cat); a.href = "#cat" + ci; nav.appendChild(a);
       var sec = el("section", "cat"); sec.id = "cat" + ci;
       sec.appendChild(el("h2", null, c.cat));
-      if (c.saus) sec.appendChild(el("div", "hint", "Eén saus naar keuze toe te voegen in je bestelling."));
-      if (c.cat === "Frisdrank") sec.appendChild(el("div", "hint", "Kies de soort in je bestelling."));
+      if (c.saus) sec.appendChild(el("div", "hint", "Klik op een prijs, kies eventueel een saus en klik op het vinkje."));
+      if (c.cat === "Frisdrank") sec.appendChild(el("div", "hint", "Klik op de prijs, kies de soort en klik op het vinkje."));
       var ul = el("ul", "items");
       c.items.forEach(function (it) {
         INDEX[it.id] = Object.assign({ saus: c.saus }, it);
@@ -85,11 +85,9 @@
           var b = el("button", "add num");
           if (m.maat) b.appendChild(el("small", null, m.maat));
           b.appendChild(document.createTextNode(eur(m.prijs)));
-          b.setAttribute("aria-label", it.naam + (m.maat ? " " + m.maat : "") + " toevoegen");
-          b.addEventListener("click", function () {
-            mand.push({ id: it.id, maat: mi, saus: null, keuze: it.keuzes ? it.keuzes[0] : null });
-            bewaar(); renderBon();
-          });
+          b.setAttribute("aria-label", it.naam + (m.maat ? " " + m.maat : "") + " selecteren");
+          b.setAttribute("aria-pressed", "false");
+          b.addEventListener("click", function () { kies(li, b, it, c, mi); });
           btns.appendChild(b);
         });
         li.appendChild(btns);
@@ -98,6 +96,48 @@
       sec.appendChild(ul);
       menu.appendChild(sec);
     });
+  }
+
+  // Selecteren: klik op een prijs opent een keuzeregel; pas het vinkje voegt toe aan de winkelwagen.
+  var open = null;
+  function sluitKeuze() {
+    if (!open) return;
+    open.paneel.remove(); open.knop.setAttribute("aria-pressed", "false"); open = null;
+  }
+  function kies(li, knop, it, c, mi) {
+    var zelfde = open && open.knop === knop;
+    sluitKeuze();
+    if (zelfde) return;
+    var r = { id: it.id, maat: mi, saus: null, keuze: it.keuzes ? it.keuzes[0] : null };
+    var p = el("div", "kies");
+    var prijs = el("span", "kprijs num");
+    function zetPrijs() { prijs.textContent = eur(info(r).prijs); }
+    if (it.keuzes) {
+      var sk = el("select"); sk.id = "kies-k"; sk.setAttribute("aria-label", "Soort");
+      it.keuzes.forEach(function (k) { var o = el("option", null, k); o.value = k; sk.appendChild(o); });
+      sk.addEventListener("change", function () { r.keuze = sk.value; });
+      p.appendChild(sk);
+    }
+    if (c.saus) {
+      var ss = el("select"); ss.id = "kies-s"; ss.setAttribute("aria-label", "Saus");
+      var o0 = el("option", null, "Geen saus"); o0.value = ""; ss.appendChild(o0);
+      M.sauzen.forEach(function (s) { var o = el("option", null, s.naam + " (+" + eur(s.prijs) + ")"); o.value = s.naam; ss.appendChild(o); });
+      ss.addEventListener("change", function () { r.saus = ss.value || null; zetPrijs(); });
+      p.appendChild(ss);
+    }
+    p.appendChild(prijs);
+    var ok = el("button", "vink", "✓");
+    ok.setAttribute("aria-label", "Toevoegen aan bestelling"); ok.title = "Toevoegen aan bestelling";
+    ok.addEventListener("click", function () {
+      mand.push(r); bewaar(); renderBon(); sluitKeuze();
+      knop.classList.add("toegevoegd"); setTimeout(function () { knop.classList.remove("toegevoegd"); }, 900);
+    });
+    p.appendChild(ok);
+    zetPrijs();
+    li.appendChild(p);
+    knop.setAttribute("aria-pressed", "true");
+    open = { paneel: p, knop: knop };
+    (p.querySelector("select") || ok).focus();
   }
 
   function renderBon() {
