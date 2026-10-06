@@ -72,11 +72,11 @@
       var a = el("a", null, c.cat); a.href = "#cat" + ci; nav.appendChild(a);
       var sec = el("section", "cat"); sec.id = "cat" + ci;
       sec.appendChild(el("h2", null, c.cat));
-      if (c.saus) sec.appendChild(el("div", "hint", "Klik op een prijs, kies eventueel een saus en klik op het vinkje."));
+      if (c.saus) sec.appendChild(el("div", "hint", "Klik op een prijs, kies waar mogelijk een saus en klik op het vinkje."));
       if (c.cat === "Frisdrank") sec.appendChild(el("div", "hint", "Klik op de prijs, kies de soort en klik op het vinkje."));
       var ul = el("ul", "items");
       c.items.forEach(function (it) {
-        INDEX[it.id] = Object.assign({ saus: c.saus }, it);
+        INDEX[it.id] = it;
         var li = el("li", "item");
         li.appendChild(el("div", "nm", it.naam + (it.keuzes && c.cat !== "Frisdrank" ? " (" + it.keuzes.join(", ").toLowerCase() + ")" : "")));
         var btns = el("div", "addbtns");
@@ -118,7 +118,7 @@
       sk.addEventListener("change", function () { r.keuze = sk.value; });
       p.appendChild(sk);
     }
-    if (c.saus) {
+    if (it.saus) {
       var ss = el("select"); ss.id = "kies-s"; ss.setAttribute("aria-label", "Saus");
       var o0 = el("option", null, "Geen saus"); o0.value = ""; ss.appendChild(o0);
       M.sauzen.forEach(function (s) { var o = el("option", null, s.naam + " (+" + eur(s.prijs) + ")"); o.value = s.naam; ss.appendChild(o); });
