@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snackbar Vrijdagbestelling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="sub">Snackbar De Schalm · <span class="num">0524-512556</span></div>
+      <h1>Vrijdagbestelling</h1>
+    </div>
+    <div style="text-align:right">
+      <div id="weekLabel" style="font-weight:600">Menu laden…</div>
+      <span id="statusPill" class="status-pill pill-open" hidden></span>
+    </div>
+  </header>
+
+  <div id="laadFout" class="notice" hidden>Het menu kon niet worden geladen. Ververs de pagina.</div>
+  <div id="geslotenMelding" class="notice" hidden>Bestellen is gesloten voor deze vrijdag.</div>
+
+  <div class="grid">
+    <div style="min-width:0">
+      <nav class="catnav" id="catnav" aria-label="Categorieën"></nav>
+      <div id="menu"></div>
+    </div>
+    <aside class="bon" id="bon" aria-label="Jouw bestelling">
+      <h2>Jouw bestelling</h2>
+      <div>
+        <label for="naam">Naam</label>
+        <input type="text" id="naam" placeholder="Voor- en achternaam" autocomplete="name" maxlength="60">
+      </div>
+      <div id="codeVeld" hidden>
+        <label for="code">Toegangscode vestiging</label>
+        <input type="password" id="code" autocomplete="off">
+      </div>
+      <ul class="lines" id="lines"></ul>
+      <div class="total"><span>Totaal</span><span id="total" class="num">€ 0,00</span></div>
+      <button class="btn btn-primary" id="betaal" disabled>Bestellen en betalen</button>
+      <div class="msg" id="msg">Je betaalt direct via iDEAL. Pas na betaling staat je bestelling op de lijst.</div>
+    </aside>
+  </div>
+</div>
+<a href="#bon" class="mandbalk" id="mandbalk" hidden><span id="mandAantal">0 items</span><strong id="mandTotaal" class="num">€ 0,00</strong></a>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function eur(c) { return "€ " + (c / 100).toFixed(2).replace(".", ","); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function lees(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+  function schrijf(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  var M = null, INDEX = {}, mand = lees("snack-mand", []), bezig = false;
+
+  function info(r) {
+    var it = INDEX[r.id]; if (!it) return null;
+    var m = it.maten[r.maat || 0]; if (!m || m.prijs == null) return null;
+    var saus = r.saus ? M.sauzen.filter(function (s) { return s.naam === r.saus; })[0] : null;
+    return { it: it, naam: it.naam + (m.maat ? " " + m.maat.toLowerCase() : ""), prijs: m.prijs + (saus ? saus.prijs : 0) };
+  }
+  function bewaar() { schrijf("snack-mand", mand); }
+
+  function renderMenu() {
+    var menu = $("menu"), nav = $("catnav");
+    M.menu.forEach(function (c, ci) {
+      var a = el("a", null, c.cat); a.href = "#cat" + ci; nav.appendChild(a);
+      var sec = el("section", "cat"); sec.id = "cat" + ci;
+      sec.appendChild(el("h2", null, c.cat));
+      if (c.saus) sec.appendChild(el("div", "hint", "Eén saus naar keuze toe te voegen in je bestelling."));
+      if (c.cat === "Frisdrank") sec.appendChild(el("div", "hint", "Kies de soort in je bestelling."));
+      var ul = el("ul", "items");
+      c.items.forEach(function (it) {
+        INDEX[it.id] = Object.assign({ saus: c.saus }, it);
+        var li = el("li", "item");
+        li.appendChild(el("div", "nm", it.naam + (it.keuzes && c.cat !== "Frisdrank" ? " (" + it.keuzes.join(", ").toLowerCase() + ")" : "")));
+        var btns = el("div", "addbtns");
+        it.maten.forEach(function (m, mi) {
+          if (m.prijs == null) return;
+          var b = el("button", "add num");
+          if (m.maat) b.appendChild(el("small", null, m.maat));
+          b.appendChild(document.createTextNode(eur(m.prijs)));
+          b.setAttribute("aria-label", it.naam + (m.maat ? " " + m.maat : "") + " toevoegen");
+          b.addEventListener("click", function () {
+            mand.push({ id: it.id, maat: mi, saus: null, keuze: it.keuzes ? it.keuzes[0] : null });
+            bewaar(); renderBon();
+          });
+          btns.appendChild(b);
+        });
+        li.appendChild(btns);
+        ul.appendChild(li);
+      });
+      sec.appendChild(ul);
+      menu.appendChild(sec);
+    });
+  }
+
+  function renderBon() {
+    mand = mand.filter(info); // oude of ongeldige regels weg
+    var ul = $("lines"); ul.textContent = "";
+    if (!mand.length) ul.appendChild(el("li", "empty", "Nog niets gekozen. Tik op een prijs in het menu om iets toe te voegen."));
+    var totaal = 0;
+    mand.forEach(function (r, i) {
+      var x = info(r); totaal += x.prijs;
+      var li = el("li", "line");
+      li.appendChild(el("span", "ln", x.naam));
+      li.appendChild(el("span", "pr num", eur(x.prijs)));
+      var rm = el("button", "rm", "×"); rm.setAttribute("aria-label", "Verwijder " + x.naam);
+      rm.addEventListener("click", function () { mand.splice(i, 1); bewaar(); renderBon(); });
+      li.appendChild(rm);
+      if (x.it.keuzes) {
+        var sk = el("select"); sk.id = "k" + i; sk.setAttribute("aria-label", "Soort");
+        x.it.keuzes.forEach(function (k) { var o = el("option", null, k); o.value = k; o.selected = k === r.keuze; sk.appendChild(o); });
+        sk.addEventListener("change", function () { r.keuze = sk.value; bewaar(); renderBon(); });
+        li.appendChild(sk);
+      }
+      if (x.it.saus) {
+        var ss = el("select"); ss.id = "s" + i; ss.setAttribute("aria-label", "Saus");
+        var o0 = el("option", null, "Geen saus"); o0.value = ""; ss.appendChild(o0);
+        M.sauzen.forEach(function (s) { var o = el("option", null, s.naam + " (+" + eur(s.prijs) + ")"); o.value = s.naam; o.selected = s.naam === r.saus; ss.appendChild(o); });
+        ss.addEventListener("change", function () { r.saus = ss.value || null; bewaar(); renderBon(); });
+        li.appendChild(ss);
+      }
+      ul.appendChild(li);
+    });
+    $("total").textContent = eur(totaal);
+    $("mandbalk").hidden = !mand.length;
+    $("mandAantal").textContent = "Bekijk bestelling (" + mand.length + ")";
+    $("mandTotaal").textContent = eur(totaal);
+    $("betaal").textContent = mand.length ? "Bestellen en betalen " + eur(totaal) : "Bestellen en betalen";
+    $("betaal").disabled = bezig || !mand.length || M.gesloten;
+  }
+
+  $("naam").value = lees("snack-naam", "");
+  $("code").value = lees("snack-code", "");
+
+  $("betaal").addEventListener("click", async function () {
+    var naam = $("naam").value.trim();
+    if (naam.length < 2) { toon("Vul je naam in.", true); $("naam").focus(); return; }
+    if (M.codeNodig && !$("code").value) { toon("Vul de toegangscode in.", true); $("code").focus(); return; }
+    schrijf("snack-naam", naam); schrijf("snack-code", $("code").value);
+    bezig = true; renderBon(); toon("Betaling wordt gestart…");
+    try {
+      var res = await fetch("/api/bestel", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ naam: naam, code: $("code").value, regels: mand })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok || !data.checkoutUrl) throw new Error(data.fout || "De betaling kon niet worden gestart.");
+      location.href = data.checkoutUrl;
+    } catch (e) {
+      bezig = false; renderBon(); toon(e.message, true);
+    }
+  });
+  function toon(t, f) { var m = $("msg"); m.textContent = t; m.className = "msg" + (f ? " fout" : ""); }
+
+  fetch("/api/menu").then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (data) {
+    M = data;
+    $("weekLabel").textContent = "Bestelling voor " + M.weekTekst;
+    var p = $("statusPill"); p.hidden = false;
+    p.className = "status-pill " + (M.gesloten ? "pill-dicht" : "pill-open");
+    p.textContent = M.gesloten ? "Bestellen gesloten" : "Open tot vrijdag " + M.sluittijd;
+    $("geslotenMelding").hidden = !M.gesloten;
+    $("codeVeld").hidden = !M.codeNodig;
+    renderMenu();
+    if (M.gesloten) document.querySelectorAll(".add").forEach(function (b) { b.disabled = true; });
+    renderBon();
+  }).catch(function () { $("laadFout").hidden = false; $("weekLabel").textContent = ""; });
+})();
+</script>
+</body>
+</html>

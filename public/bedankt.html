@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bestelling Snackbar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap smal">
+  <header class="top">
+    <div>
+      <div class="sub">Snackbar De Schalm</div>
+      <h1 id="kop">Betaling controleren…</h1>
+    </div>
+    <span id="chip" class="chip c-wacht">Even geduld</span>
+  </header>
+  <div class="panel" id="inhoud" hidden>
+    <p id="tekst" style="margin-top:0"></p>
+    <ul class="lines" id="lines"></ul>
+    <div class="total" style="margin-top:10px"><span>Totaal</span><span id="total" class="num"></span></div>
+  </div>
+  <div class="row">
+    <a class="btn btn-primary" id="opnieuw" href="#" hidden>Opnieuw betalen</a>
+    <a class="btn btn-ghost" href="/">Terug naar het menu</a>
+  </div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function eur(c) { return "€ " + (c / 100).toFixed(2).replace(".", ","); }
+  var id = new URLSearchParams(location.search).get("id"), pogingen = 0;
+  var TEKST = {
+    paid: ["Betaald", "c-ok", "Bedankt! Je bestelling staat op de lijst."],
+    open: ["Nog niet betaald", "c-open", "De betaling is nog niet afgerond."],
+    pending: ["In behandeling", "c-wacht", "Je betaling wordt verwerkt. Deze pagina werkt zichzelf bij."],
+    authorized: ["In behandeling", "c-wacht", "Je betaling wordt verwerkt. Deze pagina werkt zichzelf bij."],
+    canceled: ["Geannuleerd", "c-open", "Je hebt de betaling geannuleerd. Je bestelling staat niet op de lijst."],
+    expired: ["Verlopen", "c-open", "De betaling is verlopen. Je bestelling staat niet op de lijst."],
+    failed: ["Mislukt", "c-open", "De betaling is mislukt. Je bestelling staat niet op de lijst."]
+  };
+  async function check() {
+    try {
+      var res = await fetch("/api/bestelling?id=" + encodeURIComponent(id || ""));
+      if (!res.ok) throw 0;
+      var b = await res.json(), t = TEKST[b.status] || TEKST.pending;
+      $("kop").textContent = b.status === "paid" ? "Bestelling geplaatst" : "Bestelling " + t[0].toLowerCase();
+      $("chip").textContent = t[0]; $("chip").className = "chip " + t[1];
+      $("tekst").textContent = t[2];
+      var ul = $("lines"); ul.textContent = "";
+      b.regels.forEach(function (r) {
+        var li = document.createElement("li"); li.className = "line";
+        var a = document.createElement("span"); a.className = "ln"; a.textContent = r.omschrijving;
+        var p = document.createElement("span"); p.className = "pr num"; p.textContent = eur(r.prijs);
+        li.appendChild(a); li.appendChild(p); ul.appendChild(li);
+      });
+      $("total").textContent = eur(b.totaal);
+      $("inhoud").hidden = false;
+      if (b.status === "paid") { try { localStorage.removeItem("snack-mand"); } catch (e) {} }
+      var o = $("opnieuw");
+      o.hidden = !b.checkoutUrl; if (b.checkoutUrl) o.href = b.checkoutUrl;
+      if (!/paid|canceled|expired|failed/.test(b.status) && ++pogingen < 40) setTimeout(check, 3000);
+    } catch (e) {
+      $("kop").textContent = "Bestelling niet gevonden";
+      $("chip").textContent = "Onbekend"; $("chip").className = "chip c-open";
+    }
+  }
+  check();
+})();
+</script>
+</body>
+</html>

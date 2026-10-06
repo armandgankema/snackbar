@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Beheer Vrijdagbestelling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="sub">Snackbar De Schalm · <span class="num">0524-512556</span></div>
+      <h1>Beheer vrijdagbestelling</h1>
+    </div>
+    <div class="row" id="weeknav" hidden>
+      <button class="btn btn-ghost" id="vorige">← Vorige</button>
+      <strong id="weekLabel" class="num"></strong>
+      <button class="btn btn-ghost" id="volgende">Volgende →</button>
+    </div>
+  </header>
+
+  <form class="panel smal" id="login">
+    <h2>Inloggen</h2>
+    <label for="ww">Wachtwoord</label>
+    <input type="password" id="ww" autocomplete="current-password">
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-dark" type="submit">Inloggen</button>
+      <span class="msg" id="loginMsg"></span>
+    </div>
+  </form>
+
+  <div id="app" hidden>
+    <div class="stats">
+      <div class="stat"><b id="sBetaald" class="num">0</b><span>Betaalde bestellingen</span></div>
+      <div class="stat"><b id="sTot" class="num">€ 0,00</b><span>Ontvangen via Mollie</span></div>
+      <div class="stat"><b id="sOpen" class="num">0</b><span>Niet afgerond</span></div>
+      <div class="stat"><span id="statusPill" class="status-pill pill-open"></span></div>
+    </div>
+
+    <div class="panel">
+      <h2>Bestellijst voor de snackbar</h2>
+      <pre class="copy num" id="lijst"></pre>
+      <div class="row" style="margin-top:10px">
+        <button class="btn btn-ghost" id="kopieer">Kopieer lijst</button>
+        <button class="btn btn-ghost" id="ververs">Verversen</button>
+        <span class="msg" id="kopieerMsg"></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Per persoon</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Naam</th><th>Bestelling</th><th class="r">Bedrag</th><th>Betaling</th><th>Tijd</th></tr></thead>
+          <tbody id="perPersoon"></tbody>
+        </table>
+      </div>
+      <p class="small">Alleen betaalde bestellingen staan op de bestellijst. Terugbetalen doe je in het Mollie-dashboard.</p>
+    </div>
+
+    <div class="panel smal">
+      <h2>Instellingen</h2>
+      <label for="sluit">Bestellen sluit op vrijdag om</label>
+      <input type="text" id="sluit" placeholder="11:00" style="max-width:120px">
+      <div class="row" style="margin-top:10px">
+        <button class="btn btn-dark" id="bewaar">Opslaan</button>
+        <button class="btn btn-ghost" id="toggle">Bestellen nu sluiten</button>
+        <span class="msg" id="instMsg"></span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function eur(c) { return "€ " + (c / 100).toFixed(2).replace(".", ","); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  var ww = ""; try { ww = sessionStorage.getItem("snack-ww") || ""; } catch (e) {}
+  var D = null, week = null;
+  var STATUS = { paid: ["Betaald", "c-ok"], open: ["Niet betaald", "c-open"], pending: ["In behandeling", "c-wacht"], authorized: ["In behandeling", "c-wacht"],
+    canceled: ["Geannuleerd", "c-open"], expired: ["Verlopen", "c-open"], failed: ["Mislukt", "c-open"] };
+
+  async function api(pad, opties) {
+    opties = opties || {};
+    opties.headers = Object.assign({ "x-wachtwoord": ww, "Content-Type": "application/json" }, opties.headers || {});
+    var res = await fetch(pad, opties), data = await res.json().catch(function () { return {}; });
+    if (res.status === 401) { uitloggen("Wachtwoord klopt niet."); throw new Error("401"); }
+    if (!res.ok) throw new Error(data.fout || "Er ging iets mis.");
+    return data;
+  }
+  function uitloggen(t) { $("app").hidden = true; $("weeknav").hidden = true; $("login").hidden = false; $("loginMsg").textContent = t || ""; try { sessionStorage.removeItem("snack-ww"); } catch (e) {} }
+
+  async function laad() {
+    try { D = await api("/api/beheer" + (week ? "?week=" + week : "")); } catch (e) { if (e.message !== "401") $("kopieerMsg").textContent = e.message; return; }
+    week = D.week;
+    try { sessionStorage.setItem("snack-ww", ww); } catch (e) {}
+    $("login").hidden = true; $("app").hidden = false; $("weeknav").hidden = false;
+    $("weekLabel").textContent = D.weekTekst;
+    $("volgende").disabled = D.week >= D.huidigeWeek;
+    render();
+  }
+  function verschuif(dagen) {
+    var p = week.split("-").map(Number), d = new Date(Date.UTC(p[0], p[1] - 1, p[2] + dagen));
+    week = d.toISOString().slice(0, 10); laad();
+  }
+
+  function render() {
+    var betaald = D.bestellingen.filter(function (b) { return b.status === "paid"; });
+    var tot = betaald.reduce(function (t, b) { return t + b.totaal; }, 0), telling = {};
+    betaald.forEach(function (b) { b.regels.forEach(function (r) { telling[r.omschrijving] = (telling[r.omschrijving] || 0) + 1; }); });
+    $("sBetaald").textContent = betaald.length;
+    $("sTot").textContent = eur(tot);
+    $("sOpen").textContent = D.bestellingen.length - betaald.length;
+    var p = $("statusPill");
+    p.className = "status-pill " + (D.gesloten ? "pill-dicht" : "pill-open");
+    p.textContent = D.gesloten ? "Bestellen gesloten" : "Open tot vrijdag " + D.instellingen.sluittijd;
+    var keys = Object.keys(telling).sort(function (a, b) { return a.localeCompare(b, "nl"); });
+    $("lijst").textContent = keys.length
+      ? "Bestelling " + D.weekTekst + "\n\n" + keys.map(function (k) { return telling[k] + "x " + k; }).join("\n") + "\n\nTotaal: " + eur(tot)
+      : "Nog geen betaalde bestellingen voor " + D.weekTekst + ".";
+
+    var tb = $("perPersoon"); tb.textContent = "";
+    D.bestellingen.forEach(function (b) {
+      var tr = el("tr", b.status === "paid" ? "" : "grijs"), s = STATUS[b.status] || STATUS.open;
+      tr.appendChild(el("td", null, b.naam));
+      tr.appendChild(el("td", null, b.regels.map(function (r) { return r.omschrijving; }).join(", ")));
+      tr.appendChild(el("td", "r num", eur(b.totaal)));
+      var td = el("td"); td.appendChild(el("span", "chip " + s[1], s[0])); tr.appendChild(td);
+      var t = new Date(b.betaaldOp || b.aangemaakt);
+      tr.appendChild(el("td", "num small", t.toLocaleString("nl-NL", { weekday: "short", hour: "2-digit", minute: "2-digit" })));
+      tb.appendChild(tr);
+    });
+    if (!D.bestellingen.length) { var tr0 = el("tr"), td0 = el("td", "small", "Nog geen bestellingen."); td0.colSpan = 5; tr0.appendChild(td0); tb.appendChild(tr0); }
+
+    if (document.activeElement !== $("sluit")) $("sluit").value = D.instellingen.sluittijd;
+    $("toggle").textContent = D.instellingen.gesloten ? "Bestellen weer openen" : "Bestellen nu sluiten";
+  }
+
+  async function instellen(body) {
+    $("instMsg").textContent = "Opslaan…";
+    try { await api("/api/beheer", { method: "POST", body: JSON.stringify(body) }); $("instMsg").textContent = "Opgeslagen."; laad(); }
+    catch (e) { if (e.message !== "401") $("instMsg").textContent = e.message; }
+  }
+
+  $("login").addEventListener("submit", function (e) { e.preventDefault(); ww = $("ww").value; $("loginMsg").textContent = "Bezig…"; laad(); });
+  $("vorige").addEventListener("click", function () { verschuif(-7); });
+  $("volgende").addEventListener("click", function () { verschuif(7); });
+  $("ververs").addEventListener("click", laad);
+  $("bewaar").addEventListener("click", function () { instellen({ sluittijd: $("sluit").value }); });
+  $("toggle").addEventListener("click", function () { instellen({ gesloten: !D.instellingen.gesloten }); });
+  $("kopieer").addEventListener("click", function () {
+    navigator.clipboard.writeText($("lijst").textContent).then(function () { $("kopieerMsg").textContent = "Gekopieerd."; }, function () {
+      var r = document.createRange(); r.selectNodeContents($("lijst")); var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      $("kopieerMsg").textContent = "Tekst geselecteerd, kopieer met Ctrl+C.";
+    });
+  });
+  setInterval(function () { if (!$("app").hidden && document.visibilityState === "visible") laad(); }, 30000);
+  if (ww) laad();
+})();
+</script>
+</body>
+</html>
