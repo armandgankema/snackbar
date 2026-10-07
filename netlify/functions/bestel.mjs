@@ -20,7 +20,7 @@ export default async (req) => {
   if (invoer.regels.length > 40) return fout(400, "Te veel regels in één bestelling.");
 
   const inst = await leesInstellingen();
-  if (isGesloten(inst)) return fout(409, "Bestellen is gesloten voor deze vrijdag.");
+  if (isGesloten(inst)) return fout(409, "Bestellen is gesloten. Je kunt weer bestellen vanaf maandag " + inst.opentijd + ".");
 
   let regels;
   try { regels = invoer.regels.map(prijsRegel); } catch (e) { return fout(400, e.message); }

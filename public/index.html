@@ -204,7 +204,8 @@
     $("weekLabel").textContent = "Bestelling voor " + M.weekTekst;
     var p = $("statusPill"); p.hidden = false;
     p.className = "status-pill " + (M.gesloten ? "pill-dicht" : "pill-open");
-    p.textContent = M.gesloten ? "Bestellen gesloten" : "Open tot vrijdag " + M.sluittijd;
+    p.textContent = M.gesloten ? "Gesloten, open maandag " + M.opentijd : "Open tot vrijdag " + M.sluittijd;
+    $("geslotenMelding").textContent = "Bestellen is gesloten. Je kunt weer bestellen vanaf maandag " + M.opentijd + ".";
     $("geslotenMelding").hidden = !M.gesloten;
     $("codeVeld").hidden = !M.codeNodig;
     renderMenu();

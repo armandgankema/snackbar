@@ -11,6 +11,7 @@ export default async () => {
     week,
     weekTekst: weekTekst(week),
     sluittijd: inst.sluittijd,
+    opentijd: inst.opentijd,
     gesloten: isGesloten(inst),
     codeNodig: !!process.env.TOEGANGSCODE,
   }, { headers: { "Cache-Control": "no-store" } });
