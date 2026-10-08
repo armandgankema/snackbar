@@ -1,7 +1,6 @@
-import { leesInstellingen, bewaarInstellingen, lijstBestellingen, leesBestelling, bewaarBestelling, verwijderBestelling, mailVerstuurd } from "../../lib/opslag.mjs";
+import { leesInstellingen, bewaarInstellingen, lijstBestellingen, leesBestelling, bewaarBestelling, verwijderBestelling } from "../../lib/opslag.mjs";
 import { huidigeWeek, weekTekst, isWeek, isTijd, isGesloten } from "../../lib/tijd.mjs";
 import { gelijk } from "../../lib/beveiliging.mjs";
-import { verstuurMail, mailIngesteld } from "../../lib/mail.mjs";
 import { maakPdf } from "../../lib/pdf.mjs";
 
 const fout = (status, melding) => Response.json({ fout: melding }, { status });
@@ -17,17 +16,7 @@ export default async (req) => {
 
   if (req.method === "POST") {
     const i = await req.json().catch(() => ({}));
-    const week = isWeek(i.week) ? i.week : huidigeWeek();
 
-    if (i.actie === "testmail") {
-      try {
-        const m = await verstuurMail(week);
-        return Response.json({ melding: `Mail verstuurd naar ${process.env.MAIL_AAN} (${m.aantal} bestellingen).` });
-      } catch (e) {
-        console.error(e);
-        return fout(500, "Mail versturen lukte niet: " + e.message);
-      }
-    }
     if (i.actie === "verwijder") {
       await verwijderBestelling(i.id);
       return Response.json({ melding: "Bestelling verwijderd." });
@@ -65,12 +54,11 @@ export default async (req) => {
     } });
   }
 
-  const [inst, bestellingen, verstuurd] = await Promise.all([leesInstellingen(), lijstBestellingen(weekParam), mailVerstuurd(weekParam)]);
+  const [inst, bestellingen] = await Promise.all([leesInstellingen(), lijstBestellingen(weekParam)]);
   return Response.json({
     week: weekParam, weekTekst: weekTekst(weekParam), huidigeWeek: huidigeWeek(),
     instellingen: inst, gesloten: isGesloten(inst),
     handmatigGesloten: inst.geslotenWeek === huidigeWeek(),
-    mail: { ingesteld: mailIngesteld(), aan: process.env.MAIL_AAN || null, verstuurd },
     bestellingen,
   }, { headers: { "Cache-Control": "no-store" } });
 };

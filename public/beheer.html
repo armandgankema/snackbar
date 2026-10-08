@@ -65,14 +65,6 @@
       </div>
     </div>
 
-    <div class="panel smal">
-      <h2>Mail bij sluiting</h2>
-      <p id="mailStatus" style="margin-top:0"></p>
-      <div class="row">
-        <button class="btn btn-ghost" id="testmail">Mail nu versturen</button>
-        <span class="msg" id="mailMsg"></span>
-      </div>
-    </div>
 
     <div class="panel smal">
       <h2>Instellingen</h2>
@@ -195,11 +187,6 @@
     if (document.activeElement !== $("namen")) $("namen").value = (D.instellingen.namen || []).join("\n");
     $("toggle").textContent = D.handmatigGesloten ? "Bestellen weer openen" : "Bestellen deze week sluiten";
     $("toggle").hidden = D.gesloten && !D.handmatigGesloten;
-    var ms = $("mailStatus");
-    if (!D.mail.ingesteld) ms.textContent = "Mail is nog niet ingesteld. Vul in Netlify SMTP_USER, SMTP_PASS en MAIL_AAN in.";
-    else if (D.mail.verstuurd) ms.textContent = "De mail voor " + D.weekTekst + " is verstuurd naar " + D.mail.aan + ".";
-    else ms.textContent = "Op vrijdag om " + D.instellingen.sluittijd + " gaat automatisch een mail met alle bestellingen en de PDF naar " + D.mail.aan + ".";
-    $("testmail").disabled = !D.mail.ingesteld;
   }
 
   async function instellen(body, msg) {
@@ -224,12 +211,6 @@
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 10000);
       $("kopieerMsg").textContent = "";
     } catch (e) { if (e.message !== "401") $("kopieerMsg").textContent = "PDF maken lukte niet."; }
-    b.disabled = false;
-  });
-  $("testmail").addEventListener("click", async function () {
-    var b = this; b.disabled = true; $("mailMsg").textContent = "Versturen…";
-    try { var r = await post({ actie: "testmail", week: week }); $("mailMsg").textContent = r.melding; }
-    catch (e) { if (e.message !== "401") $("mailMsg").textContent = e.message; }
     b.disabled = false;
   });
   $("kopieer").addEventListener("click", function () {
