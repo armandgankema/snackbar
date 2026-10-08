@@ -18,6 +18,7 @@
     <div style="text-align:right">
       <div id="weekLabel" style="font-weight:600">Menu laden…</div>
       <span id="statusPill" class="status-pill pill-open" hidden></span>
+      <div style="margin-top:6px"><a href="overzicht.html" class="toplink">Wie heeft er al besteld?</a></div>
     </div>
   </header>
 
@@ -41,8 +42,16 @@
       </div>
       <ul class="lines" id="lines"></ul>
       <div class="total"><span>Totaal</span><span id="total" class="num">€ 0,00</span></div>
-      <button class="btn btn-primary" id="betaal" disabled>Bestellen en betalen</button>
-      <div class="msg" id="msg">Je betaalt direct via iDEAL. Pas na betaling staat je bestelling op de lijst.</div>
+      <button class="btn btn-primary" id="betaal" disabled>Bestellen</button>
+      <div class="keuze" id="betaalkeuze" hidden>
+        <strong>Hoe wil je betalen?</strong>
+        <div class="row">
+          <button class="btn btn-dark" data-wijze="contant">Contant betalen</button>
+          <button class="btn btn-dark" data-wijze="betaalverzoek">Betaalverzoek ontvangen</button>
+        </div>
+        <button class="linkknop" id="annuleer">Annuleren</button>
+      </div>
+      <div class="msg" id="msg"></div>
     </aside>
   </div>
 </div>
@@ -172,30 +181,48 @@
     $("mandbalk").hidden = !mand.length;
     $("mandAantal").textContent = "Bekijk bestelling (" + mand.length + ")";
     $("mandTotaal").textContent = eur(totaal);
-    $("betaal").textContent = mand.length ? "Bestellen en betalen " + eur(totaal) : "Bestellen en betalen";
+    $("betaal").textContent = mand.length ? "Bestellen " + eur(totaal) : "Bestellen";
     $("betaal").disabled = bezig || !mand.length || M.gesloten;
+    if (!mand.length) $("betaalkeuze").hidden = true;
   }
 
   $("naam").value = lees("snack-naam", "");
   $("code").value = lees("snack-code", "");
 
-  $("betaal").addEventListener("click", async function () {
-    var naam = $("naam").value.trim();
-    if (naam.length < 2) { toon("Vul je naam in.", true); $("naam").focus(); return; }
+  // Stap 1: naam controleren en de betaalkeuze tonen.
+  $("betaal").addEventListener("click", function () {
+    var naam = $("naam").value.trim().replace(/\s+/g, " ");
+    if (naam.split(" ").length < 2) { toon("Vul je voor- en achternaam in.", true); $("naam").focus(); return; }
     if (M.codeNodig && !$("code").value) { toon("Vul de toegangscode in.", true); $("code").focus(); return; }
-    schrijf("snack-naam", naam); schrijf("snack-code", $("code").value);
-    bezig = true; renderBon(); toon("Betaling wordt gestart…");
-    try {
-      var res = await fetch("/api/bestel", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ naam: naam, code: $("code").value, regels: mand })
-      });
-      var data = await res.json().catch(function () { return {}; });
-      if (!res.ok || !data.checkoutUrl) throw new Error(data.fout || "De betaling kon niet worden gestart.");
-      location.href = data.checkoutUrl;
-    } catch (e) {
-      bezig = false; renderBon(); toon(e.message, true);
-    }
+    toon("");
+    $("betaal").hidden = true; $("betaalkeuze").hidden = false;
+    $("betaalkeuze").querySelector("button").focus();
+  });
+  $("annuleer").addEventListener("click", function () { $("betaalkeuze").hidden = true; $("betaal").hidden = false; });
+
+  // Stap 2: bestelling plaatsen met de gekozen betaalwijze.
+  document.querySelectorAll("[data-wijze]").forEach(function (knop) {
+    knop.addEventListener("click", async function () {
+      var naam = $("naam").value.trim();
+      schrijf("snack-naam", naam); schrijf("snack-code", $("code").value);
+      bezig = true; renderBon(); toon("Bestelling wordt geplaatst…");
+      document.querySelectorAll("[data-wijze]").forEach(function (b) { b.disabled = true; });
+      try {
+        var res = await fetch("/api/bestel", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ naam: naam, code: $("code").value, regels: mand, betaalwijze: knop.dataset.wijze })
+        });
+        var data = await res.json().catch(function () { return {}; });
+        if (!res.ok || !data.id) throw new Error(data.fout || "De bestelling kon niet worden geplaatst. Probeer het opnieuw.");
+        mand = []; bewaar();
+        location.href = "bedankt.html?id=" + encodeURIComponent(data.id);
+      } catch (e) {
+        bezig = false;
+        document.querySelectorAll("[data-wijze]").forEach(function (b) { b.disabled = false; });
+        $("betaalkeuze").hidden = true; $("betaal").hidden = false;
+        renderBon(); toon(e.message, true);
+      }
+    });
   });
   function toon(t, f) { var m = $("msg"); m.textContent = t; m.className = "msg" + (f ? " fout" : ""); }
 

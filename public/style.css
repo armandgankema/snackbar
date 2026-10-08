@@ -105,3 +105,21 @@ pre.copy { white-space: pre-wrap; background: var(--bg); padding: 10px; border-r
 .kies .kprijs { margin-left: auto; font-weight: 600; }
 .vink { width: 44px; height: 40px; border: none; border-radius: 6px; background: var(--ok); color: var(--surface); font-size: 1.3rem; font-weight: 700; line-height: 1; }
 .vink:hover { filter: brightness(1.1); }
+
+.toplink { color: var(--fg); font-weight: 600; font-size: .9rem; }
+.keuze { display: flex; flex-direction: column; gap: 10px; background: var(--bg); border-radius: 6px; padding: 12px; }
+.keuze .row > .btn { flex: 1 1 140px; }
+.linkknop { background: none; border: none; color: var(--muted); text-decoration: underline; padding: 0; align-self: flex-start; font-size: .88rem; }
+details.persoon { border-bottom: 1px solid var(--line); }
+details.persoon summary { cursor: pointer; padding: 10px 4px; display: flex; justify-content: space-between; gap: 10px; font-weight: 600; list-style: none; }
+details.persoon summary::-webkit-details-marker { display: none; }
+details.persoon summary::after { content: "▾"; color: var(--muted); transition: transform .15s; }
+details.persoon[open] summary::after { transform: rotate(180deg); }
+details.persoon summary .tijd { margin-left: auto; color: var(--muted); font-weight: 400; font-size: .85rem; }
+details.persoon ul { margin: 0 0 10px; padding-left: 22px; }
+@media (prefers-reduced-motion: reduce) { details.persoon summary::after { transition: none; } }
+.c-info { background: var(--line); color: var(--fg); }
+.mini { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 4px 9px; font-size: .82rem; }
+.mini.gevaar { background: var(--tomato); color: var(--surface); border-color: var(--tomato); }
+textarea { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--bg); font: inherit; color: inherit; resize: vertical; }
+input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ok); }

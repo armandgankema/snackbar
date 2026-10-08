@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<title>Wie heeft er besteld</title>
+</head>
+<body>
+<div class="wrap smal">
+  <header class="top">
+    <div>
+      <div class="sub">Snackbar De Schalm</div>
+      <h1>Wie heeft er besteld?</h1>
+    </div>
+    <div id="weekLabel" style="font-weight:600"></div>
+  </header>
+
+  <form class="panel" id="codeForm" hidden>
+    <label for="code">Toegangscode vestiging</label>
+    <input type="password" id="code" autocomplete="off">
+    <div class="row" style="margin-top:10px"><button class="btn btn-dark" type="submit">Bekijken</button><span class="msg fout" id="codeMsg"></span></div>
+  </form>
+
+  <div id="app" hidden>
+    <div class="row" style="margin-bottom:10px">
+      <label for="zoek" style="margin:0">Zoek je naam</label>
+      <input type="text" id="zoek" placeholder="Bijvoorbeeld Jan" style="flex:1 1 200px">
+    </div>
+    <p class="small" id="aantal"></p>
+    <div class="panel" style="padding-block:4px">
+      <div id="lijst"></div>
+    </div>
+    <p class="small">Klik op een naam om te zien wat er besteld is. Staat je bestelling er dubbel in of klopt er iets niet? Meld het bij de verzamelaar.</p>
+  </div>
+  <p class="notice" id="laadFout" hidden>Het overzicht kon niet worden geladen. Ververs de pagina.</p>
+  <div class="row"><a class="btn btn-ghost" href="/">Naar het menu</a></div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  var code = ""; try { code = JSON.parse(localStorage.getItem("snack-code") || '""'); } catch (e) {}
+  var D = null;
+
+  function render() {
+    var q = $("zoek").value.trim().toLowerCase(), lijst = $("lijst"); lijst.textContent = "";
+    var zicht = D.bestellingen.filter(function (b) { return !q || b.naam.toLowerCase().indexOf(q) >= 0; });
+    $("aantal").textContent = D.bestellingen.length === 1 ? "1 bestelling deze week." : D.bestellingen.length + " bestellingen deze week.";
+    if (!zicht.length) lijst.appendChild(el("p", "empty", q ? "Geen bestelling gevonden voor deze naam." : "Er is deze week nog niet besteld."));
+    zicht.forEach(function (b) {
+      var d = el("details", "persoon"), s = el("summary");
+      s.appendChild(el("span", null, b.naam));
+      s.appendChild(el("span", "tijd", new Date(b.tijd).toLocaleString("nl-NL", { weekday: "short", hour: "2-digit", minute: "2-digit" })));
+      d.appendChild(s);
+      var ul = el("ul"); b.regels.forEach(function (r) { ul.appendChild(el("li", null, r)); });
+      d.appendChild(ul); lijst.appendChild(d);
+    });
+  }
+
+  async function laad() {
+    try {
+      var res = await fetch("/api/overzicht", { headers: { "x-code": code } }), data = await res.json();
+      if (res.status === 403) { $("codeForm").hidden = false; $("app").hidden = true; if (code) $("codeMsg").textContent = "Deze code klopt niet."; return; }
+      if (!res.ok) throw 0;
+      D = data; $("codeForm").hidden = true; $("app").hidden = false;
+      $("weekLabel").textContent = "Vrijdag " + D.weekTekst.replace(/^vrijdag /, "");
+      try { localStorage.setItem("snack-code", JSON.stringify(code)); } catch (e) {}
+      render();
+    } catch (e) { $("laadFout").hidden = false; }
+  }
+  $("codeForm").addEventListener("submit", function (e) { e.preventDefault(); code = $("code").value; laad(); });
+  $("zoek").addEventListener("input", render);
+  laad();
+})();
+</script>
+</body>
+</html>

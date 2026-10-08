@@ -1,13 +1,11 @@
 import { leesBestelling } from "../../lib/opslag.mjs";
-import { werkStatusBij } from "../../lib/mollie.mjs";
 
+// Eén bestelling, voor de bedankpagina. Het id is lang en willekeurig, dus alleen de besteller kent het.
 export default async (req) => {
-  let b = await leesBestelling(new URL(req.url).searchParams.get("id"));
-  if (!b) return Response.json({ fout: "Bestelling niet gevonden" }, { status: 404 });
-  try { b = await werkStatusBij(b); } catch (e) { console.error(e); }
+  const b = await leesBestelling(new URL(req.url).searchParams.get("id"));
+  if (!b || b.status !== "besteld") return Response.json({ fout: "Bestelling niet gevonden" }, { status: 404 });
   return Response.json({
-    naam: b.naam, week: b.week, regels: b.regels, totaal: b.totaal, status: b.status,
-    checkoutUrl: b.status === "open" ? b.checkoutUrl : null,
+    naam: b.naam, week: b.week, regels: b.regels, totaal: b.totaal, betaalwijze: b.betaalwijze,
   }, { headers: { "Cache-Control": "no-store" } });
 };
 
