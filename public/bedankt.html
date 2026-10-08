@@ -31,7 +31,8 @@
     <p id="tekst" style="margin-top:0"></p>
     <ul class="lines" id="lines"></ul>
     <div class="total" style="margin-top:10px"><span>Totaal</span><span id="total" class="num"></span></div>
-    <p id="betaalTekst" style="margin-bottom:0"></p>
+    <p id="betaalTekst"></p>
+    <div class="ophaal" id="ophaal" style="margin:0"></div>
   </div>
   <p id="nietGevonden" class="notice" hidden>Deze bestelling is niet gevonden. Misschien is hij verwijderd door de beheerder.</p>
   <div class="row">
@@ -57,6 +58,9 @@
     $("betaalTekst").textContent = b.betaalwijze === "contant"
       ? "Je betaalt " + eur(b.totaal) + " contant aan de verzamelaar."
       : "Je ontvangt een betaalverzoek van " + eur(b.totaal) + ".";
+    var o = $("ophaal");
+    o.append("Je eten is vrijdag " + (+p[2]) + " " + maanden[p[1] - 1] + " ",
+      Object.assign(document.createElement("strong"), { textContent: "rond " + b.ophaaltijd + " in " + b.ophaalplek }), " op te halen.");
     $("inhoud").hidden = false;
   }).catch(function () { $("kop").textContent = "Bestelling niet gevonden"; $("nietGevonden").hidden = false; });
 })();

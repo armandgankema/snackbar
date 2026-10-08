@@ -34,7 +34,7 @@ Bestellen is open van **maandag 07:00** tot **vrijdag 11:00**. Daarbuiten is de 
 |---|---|---|
 | `/` | Iedereen | Menu en bestellen. Na het bestellen kiest de collega contant of betaalverzoek en ziet een bedankpagina met de bestelling. |
 | `/overzicht.html` | Iedereen | Wie heeft deze week al besteld. Klik op een naam om de bestelling te zien. Bedragen staan hier niet. |
-| `/beheer.html` | Verzamelaar | Wat er per persoon te ontvangen is (met vinkje "ontvangen"), bestellingen verwijderen, bestellijst als pdf, openingstijden, medewerkerslijst, eerdere weken. |
+| `/beheer.html` | Verzamelaar | Wat er per persoon te ontvangen is (met vinkje "ontvangen"), bestellingen verwijderen, bestellijst als pdf, openingstijden, ophaaltijd en -plek, gesloten weken (vakantie, ziekte), medewerkerslijst, eerdere weken. |
 
 ## Alleen echte namen
 

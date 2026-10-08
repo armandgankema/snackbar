@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { prijsRegel } from "../../lib/menu.mjs";
 import { leesInstellingen, bewaarBestelling, BETAALWIJZEN } from "../../lib/opslag.mjs";
-import { huidigeWeek, isGesloten } from "../../lib/tijd.mjs";
+import { huidigeWeek, isGesloten, geslotenWeek } from "../../lib/tijd.mjs";
 import { controleerNaam } from "../../lib/naam.mjs";
 import { gelijk } from "../../lib/beveiliging.mjs";
 
@@ -15,6 +15,8 @@ export default async (req) => {
   if (process.env.TOEGANGSCODE && !gelijk(invoer.code, process.env.TOEGANGSCODE)) return fout(403, "De toegangscode klopt niet.");
 
   const inst = await leesInstellingen();
+  const blok = geslotenWeek(inst);
+  if (blok) return fout(409, "Deze week is er geen bestelronde" + (blok.reden ? ": " + blok.reden : "") + ".");
   if (isGesloten(inst)) return fout(409, "Bestellen is gesloten. Je kunt weer bestellen vanaf maandag " + inst.opentijd + ".");
 
   const n = controleerNaam(invoer.naam, inst.namen);

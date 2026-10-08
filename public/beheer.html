@@ -91,6 +91,32 @@
     </div>
 
     <div class="panel smal">
+      <h2>Ophalen</h2>
+      <p class="small" style="margin-top:0">Staat op de bestelpagina en op de bedankpagina, bijvoorbeeld: "Je eten is vrijdag rond 12:00 in de kantine op te halen."</p>
+      <div class="row" style="align-items:flex-start">
+        <div style="flex:0 0 auto"><label for="ophaaltijd">Rond</label><input type="text" id="ophaaltijd" placeholder="12:00" style="max-width:120px"></div>
+        <div style="flex:1 1 200px"><label for="ophaalplek">In / bij</label><input type="text" id="ophaalplek" placeholder="de kantine"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn btn-dark" id="bewaarOphaal">Opslaan</button>
+        <span class="msg" id="ophaalMsg"></span>
+      </div>
+    </div>
+
+    <div class="panel smal">
+      <h2>Gesloten weken</h2>
+      <p class="small" style="margin-top:0">Voor vakantie, ziekte of feestdagen. In deze weken kan niemand bestellen en zien collega's de reden.</p>
+      <ul class="gesloten-lijst" id="geslotenLijst"></ul>
+      <div class="row" style="align-items:flex-end">
+        <div style="flex:0 0 auto"><label for="gwWeek">Weeknummer</label><input type="number" id="gwWeek" min="1" max="53" style="max-width:100px"></div>
+        <div style="flex:0 0 auto"><label for="gwJaar">Jaar</label><input type="number" id="gwJaar" min="2024" max="2100" style="max-width:100px"></div>
+        <div style="flex:1 1 180px"><label for="gwReden">Reden (optioneel)</label><input type="text" id="gwReden" maxlength="80" placeholder="Bijvoorbeeld: bouwvak"></div>
+        <button class="btn btn-dark" id="gwToevoegen" style="flex:0 0 auto">Toevoegen</button>
+      </div>
+      <p class="msg" id="gwMsg"></p>
+    </div>
+
+    <div class="panel smal">
       <h2>Medewerkers</h2>
       <p class="small" style="margin-top:0">Optioneel. Staan hier namen, dan kunnen alleen deze mensen bestellen. Eén naam per regel, voor- en achternaam. Laat leeg om iedere echte naam toe te staan.</p>
       <label for="namen">Namen</label>
@@ -148,7 +174,7 @@
     $("sOpen").textContent = eur(som(function (b) { return !b.ontvangen; }));
     var p = $("statusPill");
     p.className = "status-pill " + (D.gesloten ? "pill-dicht" : "pill-open");
-    p.textContent = D.gesloten ? (D.handmatigGesloten ? "Deze week gesloten" : "Gesloten, open maandag " + D.instellingen.opentijd) : "Open tot vrijdag " + D.instellingen.sluittijd;
+    p.textContent = D.gesloten ? (D.handmatigGesloten || D.geblokkeerd ? "Deze week gesloten" : "Gesloten, open maandag " + D.instellingen.opentijd) : "Open tot vrijdag " + D.instellingen.sluittijd;
 
     var telling = {};
     L.forEach(function (b) { b.regels.forEach(function (r) { telling[r.omschrijving] = (telling[r.omschrijving] || 0) + 1; }); });
@@ -196,6 +222,20 @@
     if (document.activeElement !== $("sluit")) $("sluit").value = D.instellingen.sluittijd;
     if (document.activeElement !== $("opent")) $("opent").value = D.instellingen.opentijd;
     if (document.activeElement !== $("namen")) $("namen").value = (D.instellingen.namen || []).join("\n");
+    if (document.activeElement !== $("ophaaltijd")) $("ophaaltijd").value = D.instellingen.ophaaltijd;
+    if (document.activeElement !== $("ophaalplek")) $("ophaalplek").value = D.instellingen.ophaalplek;
+    if (!$("gwJaar").value) $("gwJaar").value = D.huidigeWeek.slice(0, 4);
+    var gl = $("geslotenLijst"); gl.textContent = "";
+    var GW = D.instellingen.geslotenWeken || [];
+    if (!GW.length) gl.appendChild(el("li", "small", "Er zijn geen weken gesloten."));
+    GW.forEach(function (g, i) {
+      var li = el("li");
+      li.appendChild(el("strong", null, "Week " + g.week + " " + g.jaar));
+      li.appendChild(el("span", "small", " (" + g.weekTekst + ")" + (g.reden ? ": " + g.reden : "")));
+      var x = el("button", "mini", "Verwijderen");
+      x.addEventListener("click", function () { bewaarWeken(GW.filter(function (_, j) { return j !== i; }), "Week verwijderd."); });
+      li.appendChild(x); gl.appendChild(li);
+    });
     $("toggle").textContent = D.handmatigGesloten ? "Bestellen weer openen" : "Bestellen deze week sluiten";
     $("toggle").hidden = D.gesloten && !D.handmatigGesloten;
   }
@@ -212,6 +252,20 @@
   $("ververs").addEventListener("click", laad);
   $("bewaar").addEventListener("click", function () { instellen({ sluittijd: $("sluit").value, opentijd: $("opent").value }, "instMsg"); });
   $("toggle").addEventListener("click", function () { instellen({ gesloten: !D.handmatigGesloten }, "instMsg"); });
+  function bewaarWeken(lijst, melding) {
+    $("gwMsg").textContent = "Opslaan…";
+    post({ geslotenWeken: lijst.map(function (g) { return { jaar: g.jaar, week: g.week, reden: g.reden }; }) })
+      .then(function () { $("gwMsg").textContent = melding; laad(); })
+      .catch(function (e) { if (e.message !== "401") $("gwMsg").textContent = e.message; });
+  }
+  $("gwToevoegen").addEventListener("click", function () {
+    var w = parseInt($("gwWeek").value, 10), j = parseInt($("gwJaar").value, 10);
+    if (!(w >= 1 && w <= 53) || !(j >= 2024)) { $("gwMsg").textContent = "Vul een weeknummer (1 tot 53) en een jaar in."; return; }
+    var lijst = (D.instellingen.geslotenWeken || []).concat([{ jaar: j, week: w, reden: $("gwReden").value }]);
+    bewaarWeken(lijst, "Week " + w + " is gesloten.");
+    $("gwWeek").value = ""; $("gwReden").value = "";
+  });
+  $("bewaarOphaal").addEventListener("click", function () { instellen({ ophaaltijd: $("ophaaltijd").value, ophaalplek: $("ophaalplek").value }, "ophaalMsg"); });
   $("bewaarNamen").addEventListener("click", function () { instellen({ namen: $("namen").value.split("\n") }, "namenMsg"); });
   $("pdf").addEventListener("click", async function () {
     var b = this; b.disabled = true; $("kopieerMsg").textContent = "PDF maken…";

@@ -34,6 +34,7 @@
 
   <div id="laadFout" class="notice" hidden>Het menu kon niet worden geladen. Ververs de pagina.</div>
   <div id="geslotenMelding" class="notice" hidden>Bestellen is gesloten voor deze vrijdag.</div>
+  <div id="ophaal" class="ophaal" hidden></div>
 
   <div class="grid">
     <div style="min-width:0">
@@ -52,6 +53,7 @@
       </div>
       <ul class="lines" id="lines"></ul>
       <div class="total"><span>Totaal</span><span id="total" class="num">€ 0,00</span></div>
+      <div class="small" id="ophaalBon"></div>
       <button class="btn btn-primary" id="betaal" disabled>Bestellen</button>
       <div class="keuze" id="betaalkeuze" hidden>
         <strong>Hoe wil je betalen?</strong>
@@ -242,8 +244,17 @@
     var p = $("statusPill"); p.hidden = false;
     p.className = "status-pill " + (M.gesloten ? "pill-dicht" : "pill-open");
     p.textContent = M.gesloten ? "Gesloten, open maandag " + M.opentijd : "Open tot vrijdag " + M.sluittijd;
-    $("geslotenMelding").textContent = "Bestellen is gesloten. Je kunt weer bestellen vanaf maandag " + M.opentijd + ".";
+    $("geslotenMelding").textContent = M.geslotenReden
+      ? "Deze week is er geen bestelronde: " + M.geslotenReden.replace(/[.!]?$/, ".")
+      : "Bestellen is gesloten. Je kunt weer bestellen vanaf maandag " + M.opentijd + ".";
     $("geslotenMelding").hidden = !M.gesloten;
+    if (M.geslotenReden) p.textContent = "Deze week gesloten";
+    var ophaal = "rond " + M.ophaaltijd + " in " + M.ophaalplek;
+    $("ophaal").innerHTML = "";
+    $("ophaal").append("Je eten is vrijdag ", Object.assign(document.createElement("strong"), { textContent: ophaal }), " op te halen.");
+    $("ophaal").hidden = !!M.geslotenReden;
+    $("ophaalBon").textContent = "Ophalen: vrijdag " + ophaal + ".";
+    $("ophaalBon").hidden = !!M.geslotenReden;
     $("codeVeld").hidden = !M.codeNodig;
     renderMenu();
     if (M.gesloten) document.querySelectorAll(".add").forEach(function (b) { b.disabled = true; });

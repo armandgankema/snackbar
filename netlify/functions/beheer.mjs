@@ -1,5 +1,5 @@
 import { leesInstellingen, bewaarInstellingen, lijstBestellingen, leesBestelling, bewaarBestelling, verwijderBestelling } from "../../lib/opslag.mjs";
-import { huidigeWeek, weekTekst, isWeek, isTijd, isGesloten } from "../../lib/tijd.mjs";
+import { huidigeWeek, weekTekst, isWeek, isTijd, isGesloten, geslotenWeek, vrijdagVanWeek, weeknummer } from "../../lib/tijd.mjs";
 import { gelijk } from "../../lib/beveiliging.mjs";
 import { maakPdf } from "../../lib/pdf.mjs";
 
@@ -32,6 +32,23 @@ export default async (req) => {
     const nieuw = { ...(await leesInstellingen()) };
     delete nieuw.gesloten; // oude instelling
     if (typeof i.gesloten === "boolean") nieuw.geslotenWeek = i.gesloten ? huidigeWeek() : null;
+    if (Array.isArray(i.geslotenWeken)) {
+      const lijst = [];
+      for (const g of i.geslotenWeken) {
+        const vrijdag = vrijdagVanWeek(Number(g.jaar), Number(g.week));
+        if (!vrijdag) return fout(400, `Week ${g.week} van ${g.jaar} bestaat niet.`);
+        if (vrijdag < huidigeWeek()) continue; // voorbije weken opruimen
+        lijst.push({ week: vrijdag, reden: String(g.reden || "").trim().slice(0, 80) });
+      }
+      nieuw.geslotenWeken = [...new Map(lijst.map((g) => [g.week, g])).values()].sort((a, b) => a.week.localeCompare(b.week));
+    }
+    for (const veld of ["ophaaltijd"]) {
+      if (typeof i[veld] !== "string") continue;
+      if (!isTijd(i[veld])) return fout(400, "Gebruik een tijd als 12:00.");
+      const [u, m] = i[veld].trim().split(/[:.]/);
+      nieuw[veld] = u.padStart(2, "0") + ":" + m;
+    }
+    if (typeof i.ophaalplek === "string") nieuw.ophaalplek = i.ophaalplek.trim().slice(0, 60) || "de kantine";
     for (const veld of ["sluittijd", "opentijd"]) {
       if (typeof i[veld] !== "string") continue;
       if (!isTijd(i[veld])) return fout(400, "Gebruik een tijd als 11:00.");
@@ -57,7 +74,9 @@ export default async (req) => {
   const [inst, bestellingen] = await Promise.all([leesInstellingen(), lijstBestellingen(weekParam)]);
   return Response.json({
     week: weekParam, weekTekst: weekTekst(weekParam), huidigeWeek: huidigeWeek(),
-    instellingen: inst, gesloten: isGesloten(inst),
+    instellingen: { ...inst, geslotenWeken: (inst.geslotenWeken || []).filter((g) => g.week >= huidigeWeek())
+      .map((g) => ({ ...g, ...weeknummer(g.week), weekTekst: weekTekst(g.week) })) },
+    gesloten: isGesloten(inst), geblokkeerd: !!geslotenWeek(inst),
     handmatigGesloten: inst.geslotenWeek === huidigeWeek(),
     bestellingen,
   }, { headers: { "Cache-Control": "no-store" } });
