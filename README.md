@@ -1,6 +1,6 @@
 # Snackbar Vrijdagbestelling
 
-Bestelwebsite voor de vrijdagse snackbarbestelling (Snackbar De Schalm). Collega's kiezen hun snacks, met per gerecht één saus en per blikje een soort frisdrank, en betalen direct via Mollie (iDEAL). De verzamelaar ziet op `/beheer.html` de bestellijst voor de snackbar en wie er betaald heeft.
+Bestelwebsite voor de vrijdagse snackbarbestelling (Snackbar De Schalm). Collega's kiezen hun snacks, met per gerecht één saus en per blikje een soort frisdrank. Bij het bestellen kiezen ze **contant betalen** of **betaalverzoek ontvangen**. De verzamelaar ziet op `/beheer.html` per persoon wat hij moet ontvangen, en downloadt de bestellijst als pdf voor de snackbar.
 
 ## Wat je nodig hebt
 
