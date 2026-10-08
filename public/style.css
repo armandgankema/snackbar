@@ -1,7 +1,7 @@
 /* Opzet: kop met week en status, menu links + bonnetje rechts (onder elkaar op telefoon) */
 :root {
   --bg: #f2f8fd; --surface: #ffffff; --line: #dbe4ee; --fg: #1d252c; --muted: #5b6670;
-  --brand: #0071dc; --brand-bar: #0071dc; --on-brand: #ffffff; --brand-soft: #e6f1fc;
+  --brand: #0071dc; --brand-bar: #0071dc; --ad-navy: #0a1325; --ad-ivory: #fbf9f5; --ad-sand: #bbab94; --on-brand: #ffffff; --brand-soft: #e6f1fc;
   --accent: #ffc220; --accent-ink: #1d252c; --tomato: #d0331f;
   --ok: #2a8703; --ok-bg: #e5f4dd; --warn: #8a5a00; --warn-bg: #fff4d1; --open-bg: #fde8e4;
   --display: "Figtree", "Segoe UI", system-ui, sans-serif;
@@ -144,3 +144,16 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ok); }
 .gesloten-lijst li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding-block: 6px; border-bottom: 1px solid var(--line); }
 .gesloten-lijst li .mini { margin-left: auto; }
 input[type="number"] { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--bg); }
+
+/* Adapteo Coevorden: navy voettekst met ivoor woordmerk en zandlijn (Adapteo-huisstijl, vierkante hoeken) */
+.adapteo { background: var(--ad-navy); color: var(--ad-ivory); border-top: 4px solid var(--ad-sand); }
+.adapteo-in { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
+.adapteo img { height: 28px; width: auto; display: block; }
+.adapteo-kop { font-weight: 600; }
+.adapteo-sub { color: var(--ad-sand); font-size: .88rem; }
+.wrap { padding-block-end: 40px; }
+@media (max-width: 820px) { body:has(.mandbalk:not([hidden])) .adapteo { padding-bottom: 56px; } }
+body { min-height: 100vh; display: flex; flex-direction: column; }
+.wrap { width: 100%; }
+.adapteo { margin-top: auto; }
+.adapteo img { height: 24px; }
