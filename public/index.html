@@ -102,8 +102,8 @@
       var a = el("a", null, c.cat); a.href = "#cat" + ci; nav.appendChild(a);
       var sec = el("section", "cat"); sec.id = "cat" + ci;
       sec.appendChild(el("h2", null, c.cat));
-      if (c.saus) sec.appendChild(el("div", "hint", "Klik op een prijs, kies waar mogelijk een saus en klik op het vinkje."));
-      if (c.cat === "Frisdrank") sec.appendChild(el("div", "hint", "Klik op de prijs, kies de soort en klik op het vinkje."));
+      if (c.saus) sec.appendChild(el("div", "hint", "Klik op een prijs, kies waar mogelijk een saus en klik op de groene knop."));
+      if (c.cat === "Frisdrank") sec.appendChild(el("div", "hint", "Klik op de prijs, kies de soort en klik op de groene knop."));
       var ul = el("ul", "items");
       c.items.forEach(function (it) {
         INDEX[it.id] = it;
@@ -156,7 +156,8 @@
       p.appendChild(ss);
     }
     p.appendChild(prijs);
-    var ok = el("button", "vink", "✓");
+    var ok = el("button", "vink");
+    ok.appendChild(el("span", "v", "✓")); ok.appendChild(document.createTextNode("Toevoegen aan bestelling"));
     ok.setAttribute("aria-label", "Toevoegen aan bestelling"); ok.title = "Toevoegen aan bestelling";
     ok.addEventListener("click", function () {
       mand.push(r); bewaar(); renderBon(); sluitKeuze();
