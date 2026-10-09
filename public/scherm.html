@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Snackmart scherm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800;900&display=swap">
+<style>
+/* Narrowcasting: één scherm 16:9, alles schaalt mee met de schermgrootte (vmin/vw). */
+:root {
+  --blauw: #0071dc; --blauw-donker: #004f9a; --geel: #ffc220; --wit: #ffffff; --ink: #1d252c;
+  --navy: #0a1325; --ivoor: #fbf9f5; --zand: #bbab94; --rood: #d0331f;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--blauw); color: var(--wit); font-family: "Figtree", "Segoe UI", system-ui, sans-serif; overflow: hidden; display: flex; flex-direction: column; }
+.top { display: flex; align-items: center; gap: 2vmin; padding: 3vmin 4vmin 0; }
+.logo { display: flex; align-items: center; gap: 1.4vmin; font-weight: 900; font-size: 6vmin; letter-spacing: -.02em; }
+.logo svg { width: 7vmin; height: 7vmin; }
+.slogan { font-weight: 700; font-size: 3vmin; opacity: .95; margin-left: 1vmin; }
+.klok { margin-left: auto; font-weight: 800; font-size: 5vmin; font-variant-numeric: tabular-nums; }
+.balk { height: .8vmin; background: var(--geel); margin-top: 2.5vmin; }
+
+main { flex: 1; display: grid; grid-template-columns: 1.55fr 1fr; gap: 4vmin; padding: 4vmin; align-items: center; min-height: 0; }
+.links { min-width: 0; }
+.kicker { display: inline-block; background: var(--geel); color: var(--ink); font-weight: 800; font-size: 2.8vmin; padding: .8vmin 2vmin; border-radius: 999px; text-transform: uppercase; letter-spacing: .06em; }
+h1 { font-size: 9vmin; line-height: 1.02; margin: 2.5vmin 0 2vmin; font-weight: 900; letter-spacing: -.02em; text-wrap: balance; }
+.aftel { font-size: 5.4vmin; font-weight: 800; font-variant-numeric: tabular-nums; }
+.aftel .getal { color: var(--geel); }
+.aftel.spoed .getal { animation: knipper 1.2s ease-in-out infinite; }
+@keyframes knipper { 50% { opacity: .35; } }
+.regel { font-size: 3.6vmin; font-weight: 600; margin-top: 2.5vmin; }
+.regel strong { color: var(--geel); }
+.teller { display: inline-flex; align-items: baseline; gap: 1.5vmin; margin-top: 3.5vmin; background: var(--blauw-donker); padding: 1.6vmin 2.6vmin; border-radius: 2vmin; font-size: 3.4vmin; font-weight: 700; }
+.teller b { font-size: 6vmin; color: var(--geel); font-variant-numeric: tabular-nums; }
+
+.qr { background: var(--wit); color: var(--ink); border-radius: 3vmin; padding: 3.5vmin; text-align: center; box-shadow: 0 2vmin 5vmin rgba(0, 0, 0, .25); justify-self: center; width: min(100%, 60vmin); }
+.qr .scan { font-weight: 900; font-size: 4.6vmin; letter-spacing: -.01em; }
+.qr svg { width: 100%; height: auto; display: block; margin: 2vmin 0; }
+.qr .url { font-weight: 700; font-size: 2.4vmin; color: var(--blauw); word-break: break-all; }
+
+.voet { background: var(--navy); color: var(--ivoor); border-top: .7vmin solid var(--zand); display: flex; align-items: center; gap: 3vmin; padding: 2.2vmin 4vmin; font-size: 2.6vmin; font-weight: 600; }
+.voet img { height: 3.6vmin; width: auto; }
+.voet .zand { color: var(--zand); margin-left: auto; font-weight: 500; }
+
+body.dicht { background: var(--navy); }
+body.dicht .teller { background: #1c2740; }
+@media (prefers-reduced-motion: reduce) { .aftel.spoed .getal { animation: none; } }
+@media (max-aspect-ratio: 1/1) { main { grid-template-columns: 1fr; } .qr { width: min(100%, 50vmin); } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><g fill="#ffc220"><rect x="9" y="4" width="5" height="20" rx="2.5" transform="rotate(-14 11.5 14)"/><rect x="17.5" y="2" width="5" height="22" rx="2.5"/><rect x="26" y="4" width="5" height="20" rx="2.5" transform="rotate(14 28.5 14)"/><rect x="13" y="6" width="4.5" height="18" rx="2.25" transform="rotate(-6 15 15)"/><rect x="22.5" y="6" width="4.5" height="18" rx="2.25" transform="rotate(6 25 15)"/></g><path d="M7 20h26l-3.2 16.5a2 2 0 0 1-2 1.5H12.2a2 2 0 0 1-2-1.5z" fill="#ffffff"/><path d="M10.5 24h19" stroke="#0071dc" stroke-width="2.4" stroke-linecap="round"/></svg>
+    Snackmart
+  </div>
+  <div class="slogan">Snack more. Live happier.</div>
+  <div class="klok" id="klok">--:--</div>
+</header>
+<div class="balk"></div>
+
+<main>
+  <section class="links">
+    <span class="kicker" id="kicker">Vrijdaglunch</span>
+    <h1 id="kop">Bestel je lunch voor vrijdag</h1>
+    <div class="aftel" id="aftel"></div>
+    <div class="regel" id="regel"></div>
+    <div class="teller" id="teller" hidden><b id="aantal">0</b><span id="aantalTekst"></span></div>
+  </section>
+  <aside class="qr">
+    <div class="scan">Scan &amp; bestel</div>
+    <div id="qr"></div>
+    <div class="url" id="url"></div>
+  </aside>
+</main>
+
+<footer class="voet">
+  <img src="img/adapteo-wordmark-ivory.png" alt="Adapteo" width="113" height="24">
+  <span>Vrijdaglunch voor de collega's van Adapteo Coevorden</span>
+  <span class="zand">Snackbar De Schalm</span>
+</footer>
+
+<script src="js/qrcode.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var S = null, opgehaald = 0;
+
+  // QR-code naar de bestelpagina van deze website (volgt vanzelf een nieuw domein).
+  var adres = location.origin + "/";
+  $("url").textContent = adres.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  try {
+    var q = qrcode(0, "M"); q.addData(adres); q.make();
+    var n = q.getModuleCount(), m = 2, d = "";
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (q.isDark(r, c)) d += "M" + (c + m) + " " + (r + m) + "h1v1h-1z";
+    $("qr").innerHTML = '<svg viewBox="0 0 ' + (n + 2 * m) + " " + (n + 2 * m) + '" shape-rendering="crispEdges" role="img" aria-label="QR-code naar ' + adres + '"><rect width="100%" height="100%" fill="#fff"/><path d="' + d + '" fill="#1d252c"/></svg>';
+  } catch (e) { $("qr").textContent = ""; }
+
+  function duur(min) {
+    min = Math.max(0, Math.round(min));
+    var dg = Math.floor(min / 1440), u = Math.floor((min % 1440) / 60), mi = min % 60;
+    if (dg >= 1) return dg + (dg === 1 ? " dag" : " dagen") + (u ? " en " + u + " uur" : "");
+    if (u >= 1) return u + " uur" + (mi ? " en " + mi + " min" : "");
+    return mi + (mi === 1 ? " minuut" : " minuten");
+  }
+
+  function render() {
+    var nu = new Date();
+    $("klok").textContent = nu.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+    if (!S) return;
+    var verstreken = (Date.now() - opgehaald) / 60000;
+    var ophalen = "rond " + S.ophaaltijd + " in " + S.ophaalplek;
+    var aftel = $("aftel"), regel = $("regel");
+    document.body.classList.toggle("dicht", !!S.gesloten);
+    aftel.className = "aftel";
+
+    if (S.geslotenReden) {
+      $("kicker").textContent = "Geen bestelronde";
+      $("kop").textContent = "Deze week geen Snackmart";
+      aftel.textContent = S.geslotenReden;
+      regel.textContent = "";
+    } else if (S.gesloten && S.vrijdagNaSluiting) {
+      $("kicker").textContent = "Bestellen is gesloten";
+      $("kop").textContent = "Eet smakelijk!";
+      aftel.innerHTML = ""; aftel.append("Ophalen ", Object.assign(document.createElement("span"), { className: "getal", textContent: ophalen }));
+      regel.textContent = "Maandag om " + S.opentijd + " kun je weer bestellen voor volgende week.";
+    } else if (S.gesloten) {
+      var tot = S.minutenTotOpening == null ? null : S.minutenTotOpening - verstreken;
+      $("kicker").textContent = "Even geduld";
+      $("kop").textContent = "Maandag om " + S.opentijd + " gaat Snackmart weer open";
+      aftel.innerHTML = "";
+      if (tot != null && tot > 0) aftel.append("Nog ", Object.assign(document.createElement("span"), { className: "getal", textContent: duur(tot) }));
+      regel.textContent = "Dan kun je weer bestellen voor " + S.weekTekst + ".";
+    } else {
+      var rest = S.minutenTotSluiting - verstreken;
+      var vandaag = rest < 24 * 60 && new Date().getDay() === 5;
+      $("kicker").textContent = vandaag ? "Laatste kans" : "Vrijdaglunch";
+      $("kop").textContent = vandaag ? "Vandaag tot " + S.sluittijd + " bestellen!" : "Bestel je lunch voor " + S.weekTekst;
+      aftel.innerHTML = ""; aftel.append("Nog ", Object.assign(document.createElement("span"), { className: "getal", textContent: duur(rest) }), " om te bestellen");
+      if (rest <= 30) aftel.classList.add("spoed");
+      regel.innerHTML = ""; regel.append("Bestellen kan tot vrijdag " + S.sluittijd + ". Ophalen ", Object.assign(document.createElement("strong"), { textContent: ophalen }), ".");
+    }
+
+    var a = S.aantal;
+    $("teller").hidden = !!S.geslotenReden || (S.gesloten && !S.vrijdagNaSluiting);
+    $("aantal").textContent = a;
+    $("aantalTekst").textContent = a === 0 ? "bestellingen. Wees de eerste!" : a === 1 ? (S.gesloten ? "collega heeft besteld" : "collega heeft al besteld")
+      : (S.gesloten ? "collega's hebben besteld" : "collega's hebben al besteld");
+  }
+
+  async function laad() {
+    try {
+      var res = await fetch("/api/scherm", { cache: "no-store" });
+      if (!res.ok) throw 0;
+      S = await res.json(); opgehaald = Date.now();
+    } catch (e) { /* oud beeld laten staan tot de volgende poging */ }
+    render();
+  }
+  laad();
+  setInterval(laad, 60 * 1000);       // gegevens elke minuut verversen
+  setInterval(render, 15 * 1000);     // klok en aftellen bijwerken
+  setTimeout(function () { location.reload(); }, 6 * 60 * 60 * 1000); // af en toe helemaal verversen voor nieuwe versies
+})();
+</script>
+</body>
+</html>

@@ -91,6 +91,12 @@
     </div>
 
     <div class="panel smal">
+      <h2>Scherm in de productie</h2>
+      <p style="margin-top:0">Zet deze link op het narrowcasting-scherm: <a id="schermLink" href="scherm.html" target="_blank" rel="noopener"></a></p>
+      <p class="small">Toont het aftellen tot de sluiting, hoeveel collega's al besteld hebben en een QR-code naar de bestelpagina. De pagina ververst zichzelf; namen en bedragen staan er niet op.</p>
+    </div>
+
+    <div class="panel smal">
       <h2>Ophalen</h2>
       <p class="small" style="margin-top:0">Staat op de bestelpagina en op de bedankpagina, bijvoorbeeld: "Je eten is vrijdag rond 12:00 in de kantine op te halen."</p>
       <div class="row" style="align-items:flex-start">
@@ -294,6 +300,7 @@
     });
   });
   setInterval(function () { if (!$("app").hidden && document.visibilityState === "visible" && !wisBevestig && !document.activeElement.matches("input,textarea")) laad(); }, 30000);
+  $("schermLink").textContent = location.origin + "/scherm.html";
   if (ww) laad();
 })();
 </script>
