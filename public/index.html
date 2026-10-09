@@ -38,7 +38,16 @@
 
   <div class="grid">
     <div style="min-width:0">
-      <nav class="catnav" id="catnav" aria-label="Categorieën"></nav>
+      <div class="menukop">
+        <div class="zoek">
+          <label for="zoekSnack" class="sr">Zoek een snack</label>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          <input type="search" id="zoekSnack" placeholder="Zoek een snack, bijvoorbeeld frikandel" autocomplete="off" enterkeyhint="search">
+          <button type="button" id="zoekWis" class="zoekwis" aria-label="Zoekopdracht wissen" hidden>×</button>
+        </div>
+        <nav class="catnav" id="catnav" aria-label="Categorieën"></nav>
+      </div>
+      <p class="geen" id="geenResultaat" hidden></p>
       <div id="menu"></div>
     </div>
     <aside class="bon" id="bon" aria-label="Jouw bestelling">
@@ -96,6 +105,29 @@
   }
   function bewaar() { schrijf("snack-mand", mand); }
 
+  function kaal(t) { return String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+
+  // Zoeken: alleen producten tonen waarvan de naam (of soort) alle zoekwoorden bevat.
+  function zoek() {
+    var q = kaal($("zoekSnack").value.trim()), woorden = q.split(/\s+/).filter(Boolean), totaal = 0;
+    $("zoekWis").hidden = !q;
+    if (q) sluitKeuze();
+    document.querySelectorAll("#menu .cat").forEach(function (sec) {
+      var zicht = 0;
+      sec.querySelectorAll(".item").forEach(function (li) {
+        var ok = woorden.every(function (w) { return li.dataset.zoek.indexOf(w) >= 0; });
+        li.hidden = !ok; if (ok) zicht++;
+      });
+      sec.hidden = !zicht; totaal += zicht;
+      var h = sec.querySelector(".hint"); if (h) h.hidden = !!q;
+    });
+    $("catnav").hidden = !!q;
+    $("geenResultaat").hidden = !q || totaal > 0;
+    $("geenResultaat").textContent = "Niets gevonden voor \u201c" + $("zoekSnack").value.trim() + "\u201d. Probeer een ander woord.";
+  }
+  $("zoekSnack").addEventListener("input", zoek);
+  $("zoekWis").addEventListener("click", function () { $("zoekSnack").value = ""; zoek(); $("zoekSnack").focus(); });
+
   function renderMenu() {
     var menu = $("menu"), nav = $("catnav");
     M.menu.forEach(function (c, ci) {
@@ -108,6 +140,7 @@
       c.items.forEach(function (it) {
         INDEX[it.id] = it;
         var li = el("li", "item");
+        li.dataset.zoek = kaal(it.naam + " " + (it.keuzes || []).join(" ") + " " + c.cat);
         li.appendChild(el("div", "nm", it.naam + (it.keuzes && c.cat !== "Frisdrank" ? " (" + it.keuzes.join(", ").toLowerCase() + ")" : "")));
         var btns = el("div", "addbtns");
         it.maten.forEach(function (m, mi) {
